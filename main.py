@@ -20,7 +20,12 @@ def pre_processing(msg: str) -> list[int]:
 
 def expanded_msg_blocks(block, index_j):
     if index_j <= 15:
-        return block >> (index_j * 32) & (2 ** 32 - 1)
+        if index_j == 0 and (block.bit_length() < 512):
+            return block >> (512 - 32)
+        try:
+            return block >> (block.bit_length() - 32 * (index_j + 1)) & (2 ** 32 - 1)
+        except ValueError:
+            return block & ((1 << 32) - 1)
     else:
         return ((Logical().sig1(expanded_msg_blocks(block, index_j - 2)) +
                  Logical().sig0(expanded_msg_blocks(block, index_j - 15)))
@@ -55,7 +60,7 @@ def main(text):
         for j in range(63 + 1):
             W = expanded_msg_blocks(blocks[i - 1], j)
             T1 = (h + lg.sigma1(e) + lg.Ch(e, f, g) + constant_words[j] + W) % (2 ** 32)
-            T2 = (lg.sigma0(a) + lg.Mag(a, b, c)) % (2 ** 32)
+            T2 = (lg.sigma0(a) + lg.Maj(a, b, c)) % (2 ** 32)
             h = g
             g = f
             f = e

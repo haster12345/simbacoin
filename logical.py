@@ -6,7 +6,7 @@ class Logical:
     def Ch(self, x: int, y: int, z: int) -> int:
         return (x & y) ^ (~x & z)
 
-    def Mag(self, x: int, y: int, z: int) -> int:
+    def Maj(self, x: int, y: int, z: int) -> int:
         return (x & y) ^ (x & z) ^ (y & z)
 
     def sigma0(self, x: int) -> int:
