@@ -80,30 +80,48 @@ def sha256(text):
 
 
 class EC:
-    def __init__(self):
+    def __init__(self, x=None, y=None):
         self.p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
         self.a = 0x0
         self.b = 0x7
         self.G = 0x0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
         self.n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
         self.h = 1
-
-    def __add__(self, other):
-        pass
-
-    def __mul__(self, other):
-        pass
+        self.x = x
+        self.y = y
 
 
-def ecdsa_encrypt(message, sk, pk):
+def add_points(P: EC, Q: EC) -> EC:
+    if P != Q:
+        lam = (Q.y - P.y) / (Q.x - Q.x)
+    else:
+        lam = 3 * P.x ** 2 + P.a
+    x_r = lam ** 2 - P.x - Q.x
+    y_r = lam * (P.x - x_r) - P.y
+    return EC(x_r, y_r)
+
+
+def mult_points(P: EC, d):
+    if d == 0:
+        return 0
+    elif d == 0:
+        return P
+    elif d % 2 == 1:
+        return add_points(P, mult_points(P, mult_points(P, d - 1)))
+    else:
+        return mult_points(add_points(P, P), d / 2)
+
+
+def ecdsa(message, sk):
     """
     curve = secp256k1 -> y^2 = x^3 + 7
-    :param message:
-    :param sk:
-    :param pk:
-    :return:
     """
-    return
+    z = message
+    k = random.randint(1, EC(0, 0).n - 1)
+    curve_points = mult_points(EC(), k)
+    r = curve_points.x % EC().n
+    s = k ** - 1 * (z + r * sk) % EC().n
+    return r, s
 
 
 def main():
@@ -115,7 +133,7 @@ def main():
     a_pk = (55, 3)
     a_sk = (5, 11)
     transaction_hash = sha256(text="A pays B 100")
-    digital_sign = ecdsa_encrypt(message=transaction_hash, sk=a_sk, pk=a_pk)
+    digital_sign = ecdsa(message=transaction_hash, sk=a_sk)
 
     return digital_sign
 
