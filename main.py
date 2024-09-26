@@ -1,3 +1,5 @@
+import random
+from functools import lru_cache
 from logical import Logical
 
 
@@ -18,6 +20,7 @@ def pre_processing(msg: str) -> list[int]:
     return blocks
 
 
+@lru_cache
 def expanded_msg_blocks(block, index_j):
     if index_j <= 15:
         if index_j == 0 and (block.bit_length() < 512):
@@ -32,11 +35,8 @@ def expanded_msg_blocks(block, index_j):
                 + expanded_msg_blocks(block, index_j - 16)) % 2 ** 32
 
 
-def main(text):
+def sha256(text):
     """
-    j = 0;
-        T1  = 0xbdbb52b0
-            = 3183170224 = 0x5be0cd19 ( h ) + 0x1f5055e7 (sigma1(e) + Ch(e, f, g)) + 24 ( W ) + 0x428a2f98 (K)
     """
     blocks = pre_processing(text)
 
@@ -76,9 +76,51 @@ def main(text):
             hash_values_i[j] = var + hash_values[i - 1][j]
         hash_values.append(hash_values_i)
 
-    return [hex(i) for i in hash_values[-1]]
+    return hash_values[-1]
+
+
+class EC:
+    def __init__(self):
+        self.p = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F
+        self.a = 0x0
+        self.b = 0x7
+        self.G = 0x0479BE667EF9DCBBAC55A06295CE870B07029BFCDB2DCE28D959F2815B16F81798483ADA7726A3C4655DA4FBFC0E1108A8FD17B448A68554199C47D08FFB10D4B8
+        self.n = 0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141
+        self.h = 1
+
+    def __add__(self, other):
+        pass
+
+    def __mul__(self, other):
+        pass
+
+
+def ecdsa_encrypt(message, sk, pk):
+    """
+    curve = secp256k1 -> y^2 = x^3 + 7
+    :param message:
+    :param sk:
+    :param pk:
+    :return:
+    """
+    return
+
+
+def main():
+    """
+    implement a quick and dirty coin, nothing fancy, just the protocol
+
+    digital_sign = given a msg, hash it and add
+    """
+    a_pk = (55, 3)
+    a_sk = (5, 11)
+    transaction_hash = sha256(text="A pays B 100")
+    digital_sign = ecdsa_encrypt(message=transaction_hash, sk=a_sk, pk=a_pk)
+
+    return digital_sign
 
 
 if __name__ == '__main__':
-    hash_vals = main(text="abc")
-    print(hash_vals)
+    hash_vals = sha256(text="A pays B 100")
+
+    print([hex(i) for i in hash_vals])
