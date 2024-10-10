@@ -17,7 +17,10 @@ class EC:
 
     @property
     def xy(self):
-        return hex(self.x), hex(self.y)
+        if self.x and self.y:
+            return hex(self.x), hex(self.y)
+        else:
+            return "points on the curve were not given"
 
 
 @lru_cache
@@ -26,15 +29,13 @@ def add_points(P: EC, Q: EC) -> EC:
     assert isinstance(Q, EC), f"Q must be an Elliptic Curve with type {EC}, got {Q} instead"
     assert P or Q, f"Can not add two null points"
 
-    if not P:
+    if not P.x:
         return Q
-    if not Q:
+    if not Q.x:
         return P
 
     if P.x != Q.x and P.y != Q.y:
-        lam = (Q.y - P.y) / (Q.x - P.x)
-    elif P.x == Q.x:
-        return EC()
+        lam = ((Q.y - P.y) * pow(Q.x - P.x, -1, 2**32)) % 2**32
     else:
         lam = 3 * (P.x << 1) + P.a
 
@@ -43,9 +44,9 @@ def add_points(P: EC, Q: EC) -> EC:
     return EC(x_r, y_r)
 
 
-def mult_points(P: EC, d):
+def mult_points(P: EC, d) -> int | EC:
     if d == 0:
-        return 0
+        return EC()
     elif d == 1:
         return P
     elif int(d % 2) == 1:
@@ -63,7 +64,7 @@ def ecdsa(message, sk):
     k = random.randint(1, EC(0, 0).n - 1)
     curve_points = mult_points(EC(EC().G_x, EC().G_y), k)
     r = curve_points.x % EC().n
-    s = k ** - 1 * (z + r * sk) % EC().n
+    s = (k ** - 1) * (z + r * sk) % EC().n
     return r, s
 
 
